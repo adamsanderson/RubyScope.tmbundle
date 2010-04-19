@@ -31,14 +31,16 @@ require "ruby_scope"
 require "set"
 
 class TextMateScope &lt; RubyScope::Scanner
-  def initialize()
-    super
+  def initialize(root)
+    super()
     @seen = Set.new
+    @root = root
   end
 
   def report_match(match)
     if !@seen.include?(@path)
-      puts "&lt;h3&gt;#{htmlize @path}&lt;/h3&gt;"
+      display_path = @path == @root ? @path : @path.sub(@root, '')
+      puts "&lt;h3&gt;#{htmlize display_path}&lt;/h3&gt;"
       @seen &lt;&lt; @path
     end
     
@@ -65,7 +67,7 @@ puts html_head(
   :page_title   =&gt; "RubyScope: #{term}",
   :html_head    =&gt; ''
 )
-ts = TextMateScope.new
+ts = TextMateScope.new(path)
 ts.add_query("include(:#{term})")
 ts.cache = RubyScope::SexpCache.new(cache_path)
 expand_paths([path]).each do |p|
