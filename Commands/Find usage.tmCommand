@@ -28,10 +28,20 @@ fail "Place the cursor over the term you wish to search for" unless term
 
 require "rubygems"
 require "ruby_scope"
+require "set"
 
 class TextMateScope &lt; RubyScope::Scanner
+  def initialize()
+    super
+    @seen = Set.new
+  end
+
   def report_match(match)
-    puts "&lt;h3&gt;#{htmlize @path}&lt;/h3&gt;"
+    if !@seen.include?(@path)
+      puts "&lt;h3&gt;#{htmlize @path}&lt;/h3&gt;"
+      @seen &lt;&lt; @path
+    end
+    
     @lines ||= code.split("\n")
     line_number = match.sexp.line - 1
     text = "%i: %s" % [match.sexp.line, htmlize(@lines[line_number].strip)]
