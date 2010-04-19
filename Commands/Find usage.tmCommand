@@ -31,14 +31,18 @@ require "ruby_scope"
 
 class TextMateScope &lt; RubyScope::Scanner
   def report_match(match)
-    puts @path + "&lt;br/&gt;"
+    puts "&lt;h3&gt;#{htmlize @path}&lt;/h3&gt;"
     @lines ||= code.split("\n")
     line_number = match.sexp.line - 1
-    text = "%i: %s" % [match.sexp.line, @lines[line_number].strip]
+    text = "%i: %s" % [match.sexp.line, htmlize(@lines[line_number].strip)]
     href = "txmt://open/?url=file://#{e_url @path}&amp;line=#{line_number+1}"
     link = "&lt;a href='#{href}'&gt;#{text}&lt;/a&gt;"
     puts link
     puts "&lt;br/&gt;"
+  end
+
+  def report_exception(ex)
+    # swallow for the moment
   end
 end
 
