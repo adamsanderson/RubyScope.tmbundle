@@ -5,11 +5,59 @@
 	<key>beforeRunningCommand</key>
 	<string>nop</string>
 	<key>command</key>
-	<string>: ${TM_RUBYSCOPE:=ruby_scope}
-require_cmd "$TM_RUBYSCOPE"
+	<string>#!/usr/bin/env ruby
 
-"$TM_RUBYSCOPE" -R --any ${TM_SELECTED_TEXT:-$TM_CURRENT_WORD} --cache $TM_PROJECT_DIRECTORY $TM_PROJECT_DIRECTORY
-</string>
+$: &lt;&lt; "#{ENV["TM_SUPPORT_PATH"]}/lib" if ENV.has_key? "TM_SUPPORT_PATH"
+LINKED_RI = "#{ENV["TM_BUNDLE_SUPPORT"]}/bin/linked_ri.rb"
+
+require "exit_codes"
+require "ui"
+require "web_preview"
+
+def fail msg
+  puts msg
+  exit 1
+end
+
+path = ENV['TM_PROJECT_DIRECTORY'] || ENV['TM_FILEPATH']
+cache_path = ENV['TM_PROJECT_DIRECTORY']
+term = ENV['TM_CURRENT_WORD']
+
+fail "A File or Directory is required" unless path
+fail "Place the cursor over the term you wish to search for" unless term
+
+require "rubygems"
+require "ruby_scope"
+
+class TextMateScope &lt; RubyScope::Scanner
+  def report_match(match)
+    puts @path + "&lt;br/&gt;"
+    @lines ||= code.split("\n")
+    line_number = match.sexp.line - 1
+    text = "%i: %s" % [match.sexp.line, @lines[line_number].strip]
+    href = "txmt://open/?url=file://#{e_url @path}&amp;line=#{line_number+1}"
+    link = "&lt;a href='#{href}'&gt;#{text}&lt;/a&gt;"
+    puts link
+    puts "&lt;br/&gt;"
+  end
+end
+
+def expand_paths(paths)
+  paths.inject([]){|p,v| File.directory?(v) ? p.concat(Dir[File.join(v,'**/*.rb')]) : p &lt;&lt; v; p }
+end
+
+puts html_head(
+  :window_title =&gt; "RubyScope",
+  :page_title   =&gt; "RubyScope: #{term}",
+  :html_head    =&gt; ''
+)
+ts = TextMateScope.new
+ts.add_query("include(:#{term})")
+ts.cache = RubyScope::SexpCache.new(cache_path)
+expand_paths([path]).each do |p|
+  ts.scan(p)
+end
+html_footer</string>
 	<key>fallbackInput</key>
 	<string>word</string>
 	<key>input</key>
@@ -19,7 +67,7 @@ require_cmd "$TM_RUBYSCOPE"
 	<key>name</key>
 	<string>Find usage</string>
 	<key>output</key>
-	<string>showAsTooltip</string>
+	<string>showAsHTML</string>
 	<key>scope</key>
 	<string>source.ruby</string>
 	<key>uuid</key>
