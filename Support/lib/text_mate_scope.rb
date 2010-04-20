@@ -9,7 +9,7 @@ class TextMateScope < RubyScope::Scanner
     super
     
     @root = ENV['TM_PROJECT_DIRECTORY'] || ENV['TM_FILEPATH']
-    fail "A File or Directory is required" unless @root
+    TextMate.exit_show_tool_tip "A File or Directory is required" unless @root
     
     @seen = Set.new
     @paths = expand_path(@root)
